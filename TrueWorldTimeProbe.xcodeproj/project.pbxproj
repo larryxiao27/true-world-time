@@ -23,6 +23,18 @@
 			"path" = "Widget/TrueWorldTimeWidget.swift";
 			"sourceTree" = "<group>";
 		};
+		"D52EBA7221FFF5AC3B0B153E" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "AppSupport/LoginItemController.swift";
+			"sourceTree" = "<group>";
+		};
+		"31420F6A96E39F4A25064A87" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "AppSupport/SystemResources.swift";
+			"sourceTree" = "<group>";
+		};
 		"4E783A9E10D2A8ABA38CD11C" = {
 			"isa" = "PBXFileReference";
 			"explicitFileType" = "wrapper.application";
@@ -43,7 +55,7 @@
 		};
 		"870B3294C0CBD48AF6BBCC1B" = {
 			"isa" = "PBXGroup";
-			"children" = ("0FDCEB91280DE73A856C8661", "C8588E5695656CF61992E12B", "747D7DC474D65A975BFFA728", "FBDC4F23F93125BBEEAE800C");
+			"children" = ("0FDCEB91280DE73A856C8661", "C8588E5695656CF61992E12B", "747D7DC474D65A975BFFA728", "D52EBA7221FFF5AC3B0B153E", "31420F6A96E39F4A25064A87", "FBDC4F23F93125BBEEAE800C");
 			"sourceTree" = "<group>";
 		};
 		"024B61C612AF874264C3C746" = {
@@ -78,8 +90,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "5";
-				"MARKETING_VERSION" = "0.5";
+				"CURRENT_PROJECT_VERSION" = "6";
+				"MARKETING_VERSION" = "0.6";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeWidget";
@@ -105,8 +117,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "5";
-				"MARKETING_VERSION" = "0.5";
+				"CURRENT_PROJECT_VERSION" = "6";
+				"MARKETING_VERSION" = "0.6";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeWidget";
@@ -173,10 +185,18 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "C8588E5695656CF61992E12B";
 		};
+		"E3FBF171EF4CB26B61AA6386" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "D52EBA7221FFF5AC3B0B153E";
+		};
+		"4DA3B4C77DFB0C77001DE507" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "31420F6A96E39F4A25064A87";
+		};
 		"949D493B91791558E87BC5D7" = {
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
-			"files" = ("2173CFEA417AD35E3DFF9B64", "2F8B1E6F7F199619798509C5");
+			"files" = ("2173CFEA417AD35E3DFF9B64", "2F8B1E6F7F199619798509C5", "E3FBF171EF4CB26B61AA6386", "4DA3B4C77DFB0C77001DE507");
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
 		"BD92572B49AC16A86614498D" = {
@@ -197,8 +217,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "5";
-				"MARKETING_VERSION" = "0.5";
+				"CURRENT_PROJECT_VERSION" = "6";
+				"MARKETING_VERSION" = "0.6";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeProbe";
@@ -222,8 +242,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "5";
-				"MARKETING_VERSION" = "0.5";
+				"CURRENT_PROJECT_VERSION" = "6";
+				"MARKETING_VERSION" = "0.6";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeProbe";
@@ -264,8 +284,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "5";
-				"MARKETING_VERSION" = "0.5";
+				"CURRENT_PROJECT_VERSION" = "6";
+				"MARKETING_VERSION" = "0.6";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
@@ -283,8 +303,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "5";
-				"MARKETING_VERSION" = "0.5";
+				"CURRENT_PROJECT_VERSION" = "6";
+				"MARKETING_VERSION" = "0.6";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-O";

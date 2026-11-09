@@ -10,7 +10,7 @@ export CLANG_MODULE_CACHE_PATH="$PROBE_BUILD/module-cache"
 # Match Xcode's com.apple.product-type.app-extension LD_ENTRY_POINT.
 # Swift @main is invoked inside the extension lifecycle, not as the process entry.
 xcrun swiftc -parse-as-library -swift-version 6 -target arm64-apple-macosx15.0 -sdk "$PROBE_SDK" -module-cache-path "$PROBE_BUILD/module-cache" -module-name TrueWorldTimeWidget -application-extension -Xlinker -e -Xlinker _NSExtensionMain "$PROBE_ROOT/Sources/ClockCore/ClockCore.swift" "$PROBE_ROOT/Widget/TrueWorldTimeWidget.swift" -o "$PROBE_WIDGET/Contents/MacOS/TrueWorldTimeWidget"
-xcrun swiftc -parse-as-library -swift-version 6 -target arm64-apple-macosx15.0 -sdk "$PROBE_SDK" -module-cache-path "$PROBE_BUILD/module-cache" -module-name TrueWorldTimeProbe "$PROBE_ROOT/Sources/ClockCore/ClockCore.swift" "$PROBE_ROOT/App/TrueWorldTimeProbe.swift" -o "$PROBE_APP/Contents/MacOS/TrueWorldTimeProbe"
+xcrun swiftc -parse-as-library -swift-version 6 -target arm64-apple-macosx15.0 -sdk "$PROBE_SDK" -module-cache-path "$PROBE_BUILD/module-cache" -module-name TrueWorldTimeProbe "$PROBE_ROOT/Sources/ClockCore/ClockCore.swift" "$PROBE_ROOT"/AppSupport/*.swift "$PROBE_ROOT/App/TrueWorldTimeProbe.swift" -o "$PROBE_APP/Contents/MacOS/TrueWorldTimeProbe"
 python3 "$PROBE_ROOT/scripts/bundle-info.py" "$PROBE_ROOT" "$PROBE_BUILD"
 codesign --force --sign - --entitlements "$PROBE_ROOT/Config/Widget.entitlements" "$PROBE_WIDGET"
 codesign --force --sign - "$PROBE_APP"

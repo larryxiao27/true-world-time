@@ -67,7 +67,7 @@ struct ProbeWidgetView: View {
     let entry: ProbeEntry
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            HStack { Text("真世界时验证").font(.caption.weight(.semibold)); Spacer(); Text("原生验证 0.5").font(.system(size: 9)).foregroundStyle(.secondary) }
+            HStack { Text("真世界时验证").font(.caption.weight(.semibold)); Spacer(); Text("原生验证 0.6").font(.system(size: 9)).foregroundStyle(.secondary) }
             if let sample = entry.snapshot, let correction = sample.correction, let utc = sample.trueUTC, let projection = entry.projection, let systemProjection = entry.systemProjection {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {

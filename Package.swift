@@ -7,7 +7,8 @@ let package = Package(
     products: [.library(name: "ClockCore", targets: ["ClockCore"]), .executable(name: "clock-probe", targets: ["ClockProbeCLI"])],
     targets: [
         .target(name: "ClockCore"),
+        .target(name: "AppSupport", path: "AppSupport"),
         .executableTarget(name: "ClockProbeCLI", dependencies: ["ClockCore"]),
-        .testTarget(name: "ClockCoreTests", dependencies: ["ClockCore"])
+        .testTarget(name: "ClockCoreTests", dependencies: ["ClockCore", "AppSupport"])
     ]
 )

@@ -57,14 +57,17 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     @Published var lastMessage = "正在校准"
     @Published var syncing = false
     @Published var pauseNetwork = false
+    @Published private(set) var resources: ResourceSnapshot?
+    private lazy var resourceMonitor = VisibleResourceMonitor()
     private var windowVisible = false
     private var server: LoopbackSnapshotServer?
     private var previousWall = Date().timeIntervalSince1970
     private var previousContinuous = ContinuousTime.now
     private var lastAutomaticSync = ContinuousTime.now
     private var tickTask: Task<Void, Never>?
-    init() {
+    init(startServices: Bool = true) {
         snapshot = engine.snapshot()
+        guard startServices else { return }
         log.write("app_launch", snapshot: snapshot)
         do { server = try LoopbackSnapshotServer(engine: engine, log: log) }
         catch { lastMessage = "本地快照服务失败：\(error.localizedDescription)" }
@@ -98,6 +101,8 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     func setWindowVisible(_ visible: Bool) {
         guard windowVisible != visible else { return }
         windowVisible = visible
+        resourceMonitor.setVisible(visible)
+        if !visible { resources = nil }
         log.write(visible ? "settings_shown" : "settings_hidden", snapshot: engine.snapshot())
         tick()
     }
@@ -115,7 +120,10 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     }
     func tick(forceReload: Bool = false) {
         let current = engine.snapshot()
-        if windowVisible { snapshot = current }
+        if windowVisible {
+            snapshot = current
+            if let sample = resourceMonitor.sampleIfDue(at: current.continuous) { resources = sample }
+        }
         let wallElapsed = current.systemUTC - previousWall
         let continuousElapsed = current.continuous - previousContinuous
         if abs(wallElapsed - continuousElapsed) > 0.75 {
@@ -169,26 +177,55 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
 
 struct ProbeSettingsView: View {
     @ObservedObject var model: ProbeModel
+    @StateObject private var login = LoginItemController()
     var hideWindow: () -> Void
     @AppStorage(ClockHourFormat.preferenceKey) private var hourFormat: ClockHourFormat = .twentyFour
     var body: some View {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("真世界时 · 技术验证 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").font(.title2.weight(.semibold))
                 HStack(spacing: 30) {
                     clock("独立真实时间", model.snapshot.trueUTC)
                     clock("系统时间", model.snapshot.systemUTC)
                 }
                 Divider()
-                Picker("小时制", selection: $hourFormat) {
-                    Text("24 小时制").tag(ClockHourFormat.twentyFour)
-                    Text("12 小时制").tag(ClockHourFormat.twelve)
-                }.pickerStyle(.segmented).frame(width: 270)
-                    .onChange(of: hourFormat) { _, _ in model.refreshWidget() }
-                LabeledContent("系统偏差", value: model.snapshot.correction.map { String(format: "%+.3f 秒", -$0) } ?? "尚未校准")
-                LabeledContent("状态", value: model.snapshot.status)
-                LabeledContent("来源", value: model.snapshot.source ?? "无")
-                LabeledContent("校准年龄", value: model.snapshot.sampleAge.map { String(format: "%.0f 秒", $0) } ?? "—")
-                LabeledContent("样本不确定度估计", value: model.snapshot.uncertainty.map { String(format: "± %.3f 秒", $0) } ?? "—")
+                HStack {
+                    Picker("小时制", selection: $hourFormat) {
+                        Text("24 小时制").tag(ClockHourFormat.twentyFour)
+                        Text("12 小时制").tag(ClockHourFormat.twelve)
+                    }.pickerStyle(.segmented).frame(width: 270)
+                        .onChange(of: hourFormat) { _, _ in model.refreshWidget() }
+                    Spacer()
+                    Toggle("登录 Mac 时启动", isOn: Binding(get: { login.requested }, set: { enabled in
+                        Task { await login.setEnabled(enabled) }
+                    })).toggleStyle(.switch).disabled(login.busy)
+                }
+                HStack {
+                    Text(login.errorMessage ?? login.statusText).font(.caption).foregroundStyle(login.errorMessage == nil ? Color.secondary : Color.red)
+                    Spacer()
+                    if login.status == .requiresApproval { Button("打开登录项设置") { login.openSettings() }.font(.caption) }
+                }
+                HStack(alignment: .top, spacing: 30) {
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text("校时状态").font(.headline)
+                        LabeledContent("系统偏差", value: model.snapshot.correction.map { String(format: "%+.3f 秒", -$0) } ?? "尚未校准")
+                        LabeledContent("状态", value: model.snapshot.status)
+                        LabeledContent("来源", value: model.snapshot.source ?? "无")
+                        LabeledContent("校准年龄", value: model.snapshot.sampleAge.map { String(format: "%.0f 秒", $0) } ?? "—")
+                        LabeledContent("不确定度估计", value: model.snapshot.uncertainty.map { String(format: "± %.3f 秒", $0) } ?? "—")
+                    }.frame(maxWidth: .infinity, alignment: .leading)
+                    VStack(alignment: .leading, spacing: 9) {
+                        Text("运行状态").font(.headline)
+                        LabeledContent("整机 CPU", value: percent(model.resources?.systemCPUPercent))
+                        LabeledContent("App CPU（单核）", value: percent(model.resources?.appCPUPercent))
+                        LabeledContent("App 内存", value: model.resources?.appMemoryBytes.map { String(format: "%.1f MiB", Double($0) / 1_048_576) } ?? "—")
+                        LabeledContent("占整机内存", value: model.resources?.appMemoryBytes.map { String(format: "%.2f%%", Double($0) / Double(HardwareSummary.current.memoryBytes) * 100) } ?? "—")
+                        Text("每 2 秒更新，后台停止采样").font(.caption).foregroundStyle(.secondary)
+                    }.monospacedDigit().frame(maxWidth: .infinity, alignment: .leading)
+                }.font(.callout)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("\(HardwareSummary.current.chip) · \(HardwareSummary.current.physicalCores) 核 / \(HardwareSummary.current.logicalCores) 线程 · \(HardwareSummary.current.memoryBytes / 1_073_741_824) GiB 内存")
+                    Text("\(HardwareSummary.current.model) · \(HardwareSummary.current.systemVersion)").foregroundStyle(.secondary)
+                }.font(.caption)
                 Text(model.lastMessage).font(.callout).foregroundStyle(.secondary)
                 HStack {
                     Button("重新校准") { Task { await model.calibrate() } }.disabled(model.syncing)
@@ -203,8 +240,11 @@ struct ProbeSettingsView: View {
                 }
                 Text("请在系统「编辑小组件」中添加「真世界时验证」。此窗口运行正确不代表原生小组件通过。").font(.caption).foregroundStyle(.secondary)
                 Text("日志：\(model.log.url.path)").font(.caption2).textSelection(.enabled)
-            }.padding(26).frame(width: 650)
+            }.padding(26).frame(width: 720)
+                .onAppear { login.refresh() }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in login.refresh() }
     }
+    private func percent(_ value: Double?) -> String { value.map { String(format: "%.1f%%", $0) } ?? "采样中…" }
     private func clock(_ title: String, _ utc: Double?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title).font(.caption).foregroundStyle(.secondary)
@@ -245,8 +285,9 @@ struct ProbeSettingsView: View {
             window.title = "真世界时 · 设置"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
+            window.isRestorable = false
             window.delegate = self
-            window.setContentSize(NSSize(width: 650, height: 600))
+            window.setContentSize(NSSize(width: 720, height: 640))
             window.center()
             settingsWindow = window
         }
@@ -256,12 +297,14 @@ struct ProbeSettingsView: View {
         NSApplication.shared.activate()
     }
     private func hideSettings() {
-        settingsWindow?.orderOut(nil)
-        model.setWindowVisible(false)
+        settingsWindow?.close()
     }
-    func windowShouldClose(_ sender: NSWindow) -> Bool {
-        hideSettings()
-        return false
+    func windowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === settingsWindow else { return }
+        model.setWindowVisible(false)
+        window.contentViewController = nil
+        window.contentView = nil
+        settingsWindow = nil
     }
     func windowDidMiniaturize(_ notification: Notification) { model.setWindowVisible(false) }
     func windowDidDeminiaturize(_ notification: Notification) { model.setWindowVisible(true) }
@@ -271,6 +314,7 @@ struct ProbeSettingsView: View {
     }
 }
 
+#if !PROBE_SETTINGS_RENDER_TEST
 @main struct TrueWorldTimeProbeApp {
     @MainActor static func main() {
         let app = NSApplication.shared
@@ -280,3 +324,4 @@ struct ProbeSettingsView: View {
         withExtendedLifetime(delegate) { app.run() }
     }
 }
+#endif
