@@ -57,6 +57,7 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     @Published var lastMessage = "正在校准"
     @Published var syncing = false
     @Published var pauseNetwork = false
+    private var windowVisible = false
     private var server: LoopbackSnapshotServer?
     private var previousWall = Date().timeIntervalSince1970
     private var previousContinuous = ContinuousTime.now
@@ -74,31 +75,59 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
             Task { @MainActor in
                 guard let self else { return }
                 self.log.write("did_wake", snapshot: self.engine.snapshot())
-                self.tick(); WidgetCenter.shared.reloadAllTimelines(); await self.calibrate()
+                self.tick(forceReload: true); await self.calibrate()
             }
         }
-        tickTask = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
+        NotificationCenter.default.addObserver(forName: .NSSystemClockDidChange, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in
                 guard let self else { return }
+                self.log.write("system_clock_notification", snapshot: self.engine.snapshot())
+                self.tick(forceReload: true)
+            }
+        }
+        NotificationCenter.default.addObserver(forName: .NSSystemTimeZoneDidChange, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in
+                guard let self else { return }
+                self.log.write("time_zone_changed", snapshot: self.engine.snapshot())
+                self.tick(forceReload: true)
+            }
+        }
+        startMonitoring()
+        Task { await calibrate() }
+    }
+    func setWindowVisible(_ visible: Bool) {
+        guard windowVisible != visible else { return }
+        windowVisible = visible
+        log.write(visible ? "settings_shown" : "settings_hidden", snapshot: engine.snapshot())
+        tick()
+    }
+    private func startMonitoring() {
+        tickTask?.cancel()
+        tickTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                // Preserve the validated one-second jump-detection fallback.
+                // Hidden settings do not repaint or write a per-second log.
+                do { try await Task.sleep(for: .seconds(1), clock: .continuous) }
+                catch { return }
                 self.tick()
             }
         }
-        Task { await calibrate() }
     }
-    func tick() {
-        snapshot = engine.snapshot()
-        let wallElapsed = snapshot.systemUTC - previousWall
-        let continuousElapsed = snapshot.continuous - previousContinuous
+    func tick(forceReload: Bool = false) {
+        let current = engine.snapshot()
+        if windowVisible { snapshot = current }
+        let wallElapsed = current.systemUTC - previousWall
+        let continuousElapsed = current.continuous - previousContinuous
         if abs(wallElapsed - continuousElapsed) > 0.75 {
-            log.write("system_clock_jump", snapshot: snapshot, note: "jumpSeconds=\(wallElapsed-continuousElapsed)")
-            WidgetCenter.shared.reloadAllTimelines()
+            log.write("system_clock_jump", snapshot: current, note: "jumpSeconds=\(wallElapsed-continuousElapsed)")
             lastMessage = "检测到系统改时，已请求小组件刷新"
         }
-        previousWall = snapshot.systemUTC; previousContinuous = snapshot.continuous
-        log.write("tick", snapshot: snapshot)
-        if snapshot.continuous - lastAutomaticSync > 900 {
-            lastAutomaticSync = snapshot.continuous
+        if forceReload || abs(wallElapsed - continuousElapsed) > 0.75 {
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+        previousWall = current.systemUTC; previousContinuous = current.continuous
+        if current.continuous - lastAutomaticSync > 900 {
+            lastAutomaticSync = current.continuous
             Task { await calibrate() }
         }
     }
@@ -106,7 +135,7 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
         guard !syncing else { return }
         if pauseNetwork {
             engine.markNetworkFailure(); tick()
-            log.write("injected_network_failure", snapshot: snapshot)
+            log.write("injected_network_failure", snapshot: engine.snapshot())
             lastMessage = "测试注入：暂停网络请求，沿用独立计时（不等于实际断网）"
             WidgetCenter.shared.reloadAllTimelines(); return
         }
@@ -138,11 +167,11 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     }
 }
 
-@main struct TrueWorldTimeProbeApp: App {
-    @StateObject private var model = ProbeModel()
+struct ProbeSettingsView: View {
+    @ObservedObject var model: ProbeModel
+    var hideWindow: () -> Void
     @AppStorage(ClockHourFormat.preferenceKey) private var hourFormat: ClockHourFormat = .twentyFour
-    var body: some Scene {
-        WindowGroup("真世界时 · 原生验证") {
+    var body: some View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("真世界时 · 技术验证 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").font(.title2.weight(.semibold))
                 HStack(spacing: 30) {
@@ -167,10 +196,14 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
                 }
                 Toggle("注入网络失败（仅用于对照测试）", isOn: $model.pauseNetwork)
                     .onChange(of: model.pauseNetwork) { _, _ in Task { await model.calibrate() } }
+                HStack {
+                    Button("收起到后台", action: hideWindow)
+                    Spacer()
+                    Button("退出真世界时") { NSApplication.shared.terminate(nil) }
+                }
                 Text("请在系统「编辑小组件」中添加「真世界时验证」。此窗口运行正确不代表原生小组件通过。").font(.caption).foregroundStyle(.secondary)
                 Text("日志：\(model.log.url.path)").font(.caption2).textSelection(.enabled)
             }.padding(26).frame(width: 650)
-        }
     }
     private func clock(_ title: String, _ utc: Double?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -178,5 +211,72 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
             Text(utc.map { hourFormat.string(from: Date(timeIntervalSince1970: $0)) } ?? "--:--:--")
                 .font(.system(size: 36, weight: .light, design: .rounded)).monospacedDigit()
         }
+    }
+}
+
+@MainActor final class BackgroundAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
+    private let model = ProbeModel()
+    private var settingsWindow: NSWindow?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let menu = NSMenu()
+        let applicationItem = NSMenuItem()
+        let applicationMenu = NSMenu(title: "真世界时")
+        let settings = NSMenuItem(title: "打开设置…", action: #selector(showSettings(_:)), keyEquivalent: ",")
+        settings.target = self
+        applicationMenu.addItem(settings)
+        applicationMenu.addItem(.separator())
+        applicationMenu.addItem(NSMenuItem(title: "退出真世界时", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        applicationItem.submenu = applicationMenu
+        menu.addItem(applicationItem)
+        NSApplication.shared.mainMenu = menu
+        // Startup is silent. Finder/Spotlight reopen events explicitly show settings.
+    }
+    func applicationShouldOpenUntitledFile(_ sender: NSApplication) -> Bool { false }
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showSettings(nil)
+        return false
+    }
+    @objc func showSettings(_ sender: Any?) {
+        if settingsWindow == nil {
+            let content = ProbeSettingsView(model: model) { [weak self] in self?.hideSettings() }
+            let window = NSWindow(contentViewController: NSHostingController(rootView: content))
+            window.title = "真世界时 · 设置"
+            window.styleMask = [.titled, .closable, .miniaturizable]
+            window.isReleasedWhenClosed = false
+            window.delegate = self
+            window.setContentSize(NSSize(width: 650, height: 600))
+            window.center()
+            settingsWindow = window
+        }
+        model.setWindowVisible(true)
+        if settingsWindow?.isMiniaturized == true { settingsWindow?.deminiaturize(nil) }
+        settingsWindow?.makeKeyAndOrderFront(nil)
+        NSApplication.shared.activate()
+    }
+    private func hideSettings() {
+        settingsWindow?.orderOut(nil)
+        model.setWindowVisible(false)
+    }
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        hideSettings()
+        return false
+    }
+    func windowDidMiniaturize(_ notification: Notification) { model.setWindowVisible(false) }
+    func windowDidDeminiaturize(_ notification: Notification) { model.setWindowVisible(true) }
+    func windowDidChangeOcclusionState(_ notification: Notification) {
+        guard let window = settingsWindow else { return }
+        model.setWindowVisible(window.isVisible && window.occlusionState.contains(.visible))
+    }
+}
+
+@main struct TrueWorldTimeProbeApp {
+    @MainActor static func main() {
+        let app = NSApplication.shared
+        app.setActivationPolicy(.accessory)
+        let delegate = BackgroundAppDelegate()
+        app.delegate = delegate
+        withExtendedLifetime(delegate) { app.run() }
     }
 }

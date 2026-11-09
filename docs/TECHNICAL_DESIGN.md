@@ -4,7 +4,7 @@
 
 目标是可添加到 Mac 桌面和通知中心的原生时钟小组件。真实时间独立于手动修改的系统时间；个人时区在真实时间上增加提前量。最终设计支持单/双时钟、指针/数字、瓷白/石墨黑以及 12/24 小时制。
 
-0.4 为技术验证版：中号组件对照真实时间和系统时间，配套 App 提供校准、状态与统一小时制。个人偏移、完整外观和指针动画属于后续产品开发。
+0.5 为技术验证版：中号组件对照真实时间和系统时间，配套 App 提供后台校准、状态与统一小时制。个人偏移、完整外观和指针动画属于后续产品开发。
 
 ## 数据流
 
@@ -70,6 +70,14 @@ flowchart LR
 
 正式版本可在签名和容器配置齐备后评估 App Groups。共享数据不意味着组件持续运行，WidgetKit 仍由系统调度刷新。
 
+## 后台生命周期
+
+0.5 使用 `LSUIElement` 与 AppKit 的 accessory 激活策略隐藏 Dock 图标。AppKit delegate 持有长期运行的校时模型，首次启动不创建设置窗口；Finder/Spotlight 的 reopen 事件才显示 SwiftUI 设置界面。关闭窗口只收起，显式退出才停止进程。
+
+系统改时、时区变化和唤醒通知触发刷新请求，并保留一秒的轻量改时检测兜底。只有窗口可见时才逐秒发布 UI 快照；取消逐秒诊断日志。设置窗口首次打开后会保留供快速重开，关闭窗口不意味着内存归零。
+
+此版本不注册系统登录项。后台状态下 WidgetKit 请求是否及时执行，仍须实际验收；详见 [性能记录](PERFORMANCE.md)。
+
 ## 验证状态和边界
 
 用户已确认 0.3 在真实系统调快后的数字显示正确。14 项自动化测试覆盖授时、时间推进、显示精度、午夜、夏令时以及小时制边界。离屏 SwiftUI 渲染用于检查生产显示代码，不代替原生宿主验收。
@@ -82,3 +90,5 @@ flowchart LR
 - [Apple：TimeDataSource](https://developer.apple.com/documentation/swiftui/timedatasource)
 - [Apple：创建 Widget 扩展](https://developer.apple.com/documentation/widgetkit/creating-a-widget-extension)
 - [NIST：Internet Time Service](https://www.nist.gov/pml/time-and-frequency-division/time-distribution/internet-time-service-its)
+- [Apple：LSUIElement 后台代理应用](https://developer.apple.com/documentation/bundleresources/information-property-list/lsuielement)
+- [Apple：处理再次打开应用](https://developer.apple.com/documentation/appkit/nsapplicationdelegate/applicationshouldhandlereopen%28_%3Ahasvisiblewindows%3A%29)

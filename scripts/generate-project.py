@@ -29,7 +29,7 @@ widget_product = add("widget-product", "PBXFileReference", explicitFileType="wra
 products = add("products", "PBXGroup", children=[app_product, widget_product], name="Products", sourceTree="<group>")
 main_group = add("main-group", "PBXGroup", children=list(file_ids.values()) + [products], sourceTree="<group>")
 
-common = {"SDKROOT": "macosx", "MACOSX_DEPLOYMENT_TARGET": "15.0", "ARCHS": "arm64", "SWIFT_VERSION": "6.0", "CLANG_ENABLE_MODULES": "YES", "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "CODE_SIGN_INJECT_BASE_ENTITLEMENTS": "YES", "CURRENT_PROJECT_VERSION": "4", "MARKETING_VERSION": "0.4", "SUPPORTED_PLATFORMS": "macosx", "GENERATE_INFOPLIST_FILE": "NO"}
+common = {"SDKROOT": "macosx", "MACOSX_DEPLOYMENT_TARGET": "15.0", "ARCHS": "arm64", "SWIFT_VERSION": "6.0", "CLANG_ENABLE_MODULES": "YES", "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "CODE_SIGN_INJECT_BASE_ENTITLEMENTS": "YES", "CURRENT_PROJECT_VERSION": "5", "MARKETING_VERSION": "0.5", "SUPPORTED_PLATFORMS": "macosx", "GENERATE_INFOPLIST_FILE": "NO"}
 def configs(name, settings):
     ids = []
     for configuration in ["Debug", "Release"]:
@@ -65,7 +65,7 @@ reference = f'<BuildableReference BuildableIdentifier="primary" BlueprintIdentif
 </Scheme>
 ''')
 info = {"CFBundleDevelopmentRegion": "zh_CN", "CFBundleExecutable": "$(EXECUTABLE_NAME)", "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)", "CFBundleInfoDictionaryVersion": "6.0", "CFBundleName": "$(PRODUCT_NAME)", "CFBundleShortVersionString": "$(MARKETING_VERSION)", "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)", "LSMinimumSystemVersion": "$(MACOSX_DEPLOYMENT_TARGET)"}
-app_info = dict(info, CFBundleDisplayName="真世界时验证", CFBundlePackageType="APPL", NSPrincipalClass="NSApplication", ProbeEvidenceDirectory="$(SRCROOT)/evidence")
+app_info = dict(info, CFBundleDisplayName="真世界时验证", CFBundlePackageType="APPL", NSPrincipalClass="NSApplication", LSUIElement=True, ProbeEvidenceDirectory="$(SRCROOT)/evidence")
 widget_info = dict(info, CFBundleDisplayName="真世界时验证", CFBundlePackageType="XPC!", NSExtension={"NSExtensionPointIdentifier": "com.apple.widgetkit-extension"}, NSAppTransportSecurity={"NSAllowsLocalNetworking": True})
 for name, value in [("App-Info.plist", app_info), ("Widget-Info.plist", widget_info)]:
     (root / "Config" / name).write_bytes(plistlib.dumps(value))
