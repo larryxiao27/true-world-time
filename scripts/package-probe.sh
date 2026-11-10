@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 PROBE_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PROBE_DERIVED="${TWT_DERIVED_DATA:-/private/tmp/true-world-time-xcode-derived}"
+PROBE_DERIVED="${TWT_DERIVED_DATA:-/private/tmp/true-world-time-release-derived}"
 python3 "$PROBE_ROOT/scripts/generate-project.py"
 mkdir -p "$PROBE_ROOT/dist" "$PROBE_ROOT/evidence"
 if xcodebuild -checkFirstLaunchStatus > "$PROBE_ROOT/evidence/xcode-first-launch.log" 2>&1; then
@@ -14,6 +14,6 @@ else
 fi
 codesign --verify --deep --strict "$PROBE_APP"
 PROBE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROBE_APP/Contents/Info.plist")"
-ditto -c -k --keepParent --norsrc "$PROBE_APP" "$PROBE_ROOT/dist/TrueWorldTimeProbe-$PROBE_VERSION.zip"
-printf '%s\n' "$PROBE_ROOT/dist/TrueWorldTimeProbe-$PROBE_VERSION.zip"
-bash "$PROBE_ROOT/scripts/make-dmg.sh" "$PROBE_APP" "$PROBE_ROOT/dist/TrueWorldTimeProbe-$PROBE_VERSION.dmg"
+ditto -c -k --keepParent --norsrc "$PROBE_APP" "$PROBE_ROOT/dist/TrueWorldTime-$PROBE_VERSION.zip"
+printf '%s\n' "$PROBE_ROOT/dist/TrueWorldTime-$PROBE_VERSION.zip"
+bash "$PROBE_ROOT/scripts/make-dmg.sh" "$PROBE_APP" "$PROBE_ROOT/dist/TrueWorldTime-$PROBE_VERSION.dmg"

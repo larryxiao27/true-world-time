@@ -166,3 +166,19 @@ func response(_ request: [UInt8], utc: Double = 1_800_000_000) -> [UInt8] {
     let oldData = try JSONSerialization.data(withJSONObject: old)
     #expect(try JSONDecoder().decode(TimeSnapshot.self, from: oldData).hourFormat == nil)
 }
+
+@Test func consumerClockLabelsDescribeFastAndSlowTime() {
+    #expect(ClockPresentation.systemDifference(correction: -597.3) == "快 9 分 57 秒")
+    #expect(ClockPresentation.systemDifference(correction: 600) == "慢 10 分")
+    #expect(ClockPresentation.systemDifference(correction: 0.4) == "基本同步")
+    #expect(ClockPresentation.systemDifference(correction: nil) == "等待校时")
+    #expect(ClockPresentation.systemDifference(correction: .infinity) == "等待校时")
+    #expect(ClockPresentation.status("offlineHoldover") == "离线计时")
+}
+
+@Test func lastSyncLabelUsesCorrectedTimeRatherThanSystemTime() {
+    let engine = ClockEngine()
+    engine.accept(NetworkSample(utc: 1794220696, continuous: 100, roundTrip: 0.01, uncertainty: 0.005, source: "fixture", stratum: 2), bootID: "boot")
+    let sample = engine.snapshot(systemUTC: 1794221306, continuous: 110, bootID: "boot")
+    #expect(ClockPresentation.lastSync(sample, hourFormat: .twentyFour, timeZone: TimeZone(identifier: "Asia/Singapore")!) == "11-09 18:38:16")
+}

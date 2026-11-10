@@ -8,10 +8,10 @@ final class ProbeLog: @unchecked Sendable {
     private let encoder = JSONEncoder()
     let url: URL
     init() {
-        let path = Bundle.main.object(forInfoDictionaryKey: "ProbeEvidenceDirectory") as? String ?? NSTemporaryDirectory()
-        let directory = URL(fileURLWithPath: path)
+        let directory = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask).first!
+            .appendingPathComponent("Logs/TrueWorldTime", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        url = directory.appendingPathComponent("native-run-" + UUID().uuidString + ".jsonl")
+        url = directory.appendingPathComponent("session-" + UUID().uuidString + ".jsonl")
         FileManager.default.createFile(atPath: url.path, contents: nil)
         encoder.outputFormatting = [.sortedKeys]
     }
@@ -56,7 +56,6 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     @Published var snapshot: TimeSnapshot
     @Published var lastMessage = "正在校准"
     @Published var syncing = false
-    @Published var pauseNetwork = false
     @Published private(set) var resources: ResourceSnapshot?
     private lazy var resourceMonitor = VisibleResourceMonitor()
     private var windowVisible = false
@@ -70,7 +69,7 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
         guard startServices else { return }
         log.write("app_launch", snapshot: snapshot)
         do { server = try LoopbackSnapshotServer(engine: engine, log: log) }
-        catch { lastMessage = "本地快照服务失败：\(error.localizedDescription)" }
+        catch { lastMessage = "时间服务未能启动，请退出后重新打开。" }
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in
             Task { @MainActor in guard let self else { return }; self.log.write("will_sleep", snapshot: self.engine.snapshot()) }
         }
@@ -128,7 +127,7 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
         let continuousElapsed = current.continuous - previousContinuous
         if abs(wallElapsed - continuousElapsed) > 0.75 {
             log.write("system_clock_jump", snapshot: current, note: "jumpSeconds=\(wallElapsed-continuousElapsed)")
-            lastMessage = "检测到系统改时，已请求小组件刷新"
+            lastMessage = "检测到系统时间变化，已请求更新小组件"
         }
         if forceReload || abs(wallElapsed - continuousElapsed) > 0.75 {
             WidgetCenter.shared.reloadAllTimelines()
@@ -141,12 +140,6 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
     }
     func calibrate() async {
         guard !syncing else { return }
-        if pauseNetwork {
-            engine.markNetworkFailure(); tick()
-            log.write("injected_network_failure", snapshot: engine.snapshot())
-            lastMessage = "测试注入：暂停网络请求，沿用独立计时（不等于实际断网）"
-            WidgetCenter.shared.reloadAllTimelines(); return
-        }
         syncing = true
         defer { syncing = false }
         var succeeded = false
@@ -164,14 +157,14 @@ final class LoopbackSnapshotServer: @unchecked Sendable {
         }
         if !succeeded { engine.markNetworkFailure() }
         snapshot = engine.snapshot()
-        lastMessage = succeeded ? "独立网络校准成功" : "网络校时失败，已明确标记保持状态"
+        lastMessage = succeeded ? "校时完成" : (snapshot.trueUTC == nil ? "暂时无法获取时间，请联网后重试" : "暂时无法校时，继续使用上次校准")
         lastAutomaticSync = ContinuousTime.now
         WidgetCenter.shared.reloadAllTimelines()
     }
     func refreshWidget() {
         log.write("manual_widget_reload", snapshot: engine.snapshot())
         WidgetCenter.shared.reloadAllTimelines()
-        lastMessage = "已请求刷新；实际显示时间需单独观察"
+        lastMessage = "已请求更新小组件"
     }
 }
 
@@ -182,9 +175,13 @@ struct ProbeSettingsView: View {
     @AppStorage(ClockHourFormat.preferenceKey) private var hourFormat: ClockHourFormat = .twentyFour
     var body: some View {
             VStack(alignment: .leading, spacing: 12) {
-                Text("真世界时 · 技术验证 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").font(.title2.weight(.semibold))
+                HStack {
+                    Text("真世界时").font(.title2.weight(.semibold))
+                    Spacer()
+                    Text("版本 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").font(.caption).foregroundStyle(.secondary)
+                }
                 HStack(spacing: 30) {
-                    clock("独立真实时间", model.snapshot.trueUTC)
+                    clock("真实时间", model.snapshot.trueUTC)
                     clock("系统时间", model.snapshot.systemUTC)
                 }
                 Divider()
@@ -207,11 +204,10 @@ struct ProbeSettingsView: View {
                 HStack(alignment: .top, spacing: 30) {
                     VStack(alignment: .leading, spacing: 9) {
                         Text("校时状态").font(.headline)
-                        LabeledContent("系统偏差", value: model.snapshot.correction.map { String(format: "%+.3f 秒", -$0) } ?? "尚未校准")
-                        LabeledContent("状态", value: model.snapshot.status)
-                        LabeledContent("来源", value: model.snapshot.source ?? "无")
-                        LabeledContent("校准年龄", value: model.snapshot.sampleAge.map { String(format: "%.0f 秒", $0) } ?? "—")
-                        LabeledContent("不确定度估计", value: model.snapshot.uncertainty.map { String(format: "± %.3f 秒", $0) } ?? "—")
+                        LabeledContent("系统偏差", value: ClockPresentation.systemDifference(correction: model.snapshot.correction))
+                        LabeledContent("状态", value: ClockPresentation.status(model.snapshot.status))
+                        LabeledContent("最近校时", value: ClockPresentation.lastSync(model.snapshot, hourFormat: hourFormat))
+                        LabeledContent("时间来源", value: model.snapshot.source ?? "等待获取")
                     }.frame(maxWidth: .infinity, alignment: .leading)
                     VStack(alignment: .leading, spacing: 9) {
                         Text("运行状态").font(.headline)
@@ -228,18 +224,15 @@ struct ProbeSettingsView: View {
                 }.font(.caption)
                 Text(model.lastMessage).font(.callout).foregroundStyle(.secondary)
                 HStack {
-                    Button("重新校准") { Task { await model.calibrate() } }.disabled(model.syncing)
-                    Button("请求小组件刷新") { model.refreshWidget() }
+                    Button("立即校时") { Task { await model.calibrate() } }.disabled(model.syncing)
+                    Button("更新小组件") { model.refreshWidget() }
                 }
-                Toggle("注入网络失败（仅用于对照测试）", isOn: $model.pauseNetwork)
-                    .onChange(of: model.pauseNetwork) { _, _ in Task { await model.calibrate() } }
                 HStack {
                     Button("收起到后台", action: hideWindow)
                     Spacer()
                     Button("退出真世界时") { NSApplication.shared.terminate(nil) }
                 }
-                Text("请在系统「编辑小组件」中添加「真世界时验证」。此窗口运行正确不代表原生小组件通过。").font(.caption).foregroundStyle(.secondary)
-                Text("日志：\(model.log.url.path)").font(.caption2).textSelection(.enabled)
+                Text("在桌面或通知中心添加「真世界时」，随时查看真实时间。").font(.caption).foregroundStyle(.secondary)
             }.padding(26).frame(width: 720)
                 .onAppear { login.refresh() }
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in login.refresh() }

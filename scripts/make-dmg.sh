@@ -7,5 +7,5 @@ trap 'rm -rf "$PROBE_STAGING"' EXIT
 ditto --norsrc "$PROBE_APP" "$PROBE_STAGING/TrueWorldTimeProbe.app"
 ln -s /Applications "$PROBE_STAGING/Applications"
 codesign --verify --deep --strict "$PROBE_STAGING/TrueWorldTimeProbe.app"
-hdiutil create -volname '真世界时验证' -srcfolder "$PROBE_STAGING" -format UDZO -ov "$PROBE_IMAGE"
+hdiutil create -volname '真世界时' -srcfolder "$PROBE_STAGING" -format UDZO -ov "$PROBE_IMAGE"
 hdiutil verify "$PROBE_IMAGE"

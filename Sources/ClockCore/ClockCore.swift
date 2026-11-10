@@ -42,6 +42,37 @@ public enum ClockHourFormat: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum ClockPresentation {
+    public static func status(_ value: String) -> String {
+        switch value {
+        case "calibrated": return "已校准"
+        case "offlineHoldover": return "离线计时"
+        case "stale": return "等待重新校时"
+        default: return "等待校时"
+        }
+    }
+    public static func systemDifference(correction: Double?) -> String {
+        guard let correction, correction.isFinite else { return "等待校时" }
+        if abs(correction) < 1 { return "基本同步" }
+        guard abs(correction) < Double(Int.max) else { return "偏差过大" }
+        let seconds = Int(abs(correction).rounded())
+        let hours = seconds / 3600, minutes = seconds % 3600 / 60, remainder = seconds % 60
+        var parts: [String] = []
+        if hours > 0 { parts.append("\(hours) 小时") }
+        if minutes > 0 { parts.append("\(minutes) 分") }
+        if remainder > 0 { parts.append("\(remainder) 秒") }
+        return (correction < 0 ? "快 " : "慢 ") + parts.joined(separator: " ")
+    }
+    public static func lastSync(_ snapshot: TimeSnapshot, hourFormat: ClockHourFormat, timeZone: TimeZone = .current) -> String {
+        guard let utc = snapshot.trueUTC, let age = snapshot.sampleAge else { return "尚未校时" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = timeZone
+        formatter.dateFormat = hourFormat == .twentyFour ? "MM-dd HH:mm:ss" : "MM-dd hh:mm:ss a"
+        return formatter.string(from: Date(timeIntervalSince1970: utc - age))
+    }
+}
+
 public struct TimeSnapshot: Codable, Sendable {
     public var trueUTC: Double?
     public var systemUTC: Double

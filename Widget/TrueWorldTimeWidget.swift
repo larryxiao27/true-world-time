@@ -13,7 +13,7 @@ struct ProbeEntry: TimelineEntry {
 struct ProbeProvider: TimelineProvider {
     func placeholder(in context: Context) -> ProbeEntry { ProbeEntry(date: .now, problem: "尚未校准") }
     func getSnapshot(in context: Context, completion: @escaping (ProbeEntry) -> Void) {
-        completion(ProbeEntry(date: .now, problem: "运行验证 App 后读取真实校准"))
+        completion(ProbeEntry(date: .now, problem: "打开真世界时以完成校时"))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<ProbeEntry>) -> Void) {
         // Detached from the app: only the system's actual widget renderer can validate this path.
@@ -46,10 +46,10 @@ struct ProbeProvider: TimelineProvider {
                         real = real.addingTimeInterval(delta)
                         system = next
                     }
-                    if entries.isEmpty { entries = [ProbeEntry(date: now, problem: "无法构建校准显示")] }
-                } else { entries = [ProbeEntry(date: now, problem: "网络尚未校准")] }
+                    if entries.isEmpty { entries = [ProbeEntry(date: now, problem: "暂时无法显示时间，请重新校时")] }
+                } else { entries = [ProbeEntry(date: now, problem: "等待网络校时")] }
             } catch {
-                entries = [ProbeEntry(date: .now, problem: "请保持验证 App 运行")]
+                entries = [ProbeEntry(date: .now, problem: "打开真世界时以更新时间")]
             }
             box.complete(Timeline(entries: entries, policy: .after(Date().addingTimeInterval(900))))
         }
@@ -67,29 +67,32 @@ struct ProbeWidgetView: View {
     let entry: ProbeEntry
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            HStack { Text("真世界时验证").font(.caption.weight(.semibold)); Spacer(); Text("原生验证 0.6").font(.system(size: 9)).foregroundStyle(.secondary) }
-            if let sample = entry.snapshot, let correction = sample.correction, let utc = sample.trueUTC, let projection = entry.projection, let systemProjection = entry.systemProjection {
+            Text("真世界时").font(.caption.weight(.semibold))
+            if let sample = entry.snapshot, let projection = entry.projection, let systemProjection = entry.systemProjection {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("独立校准 · 计时锚点").font(.system(size: 10))
+                        Text("真实时间").font(.system(size: 11)).foregroundStyle(.secondary)
                         CalibratedClockText(projection: projection)
-                            .font(.system(size: 23, weight: .medium, design: .rounded)).monospacedDigit()
+                            .font(.system(size: 26, weight: .medium, design: .rounded)).monospacedDigit()
                             .frame(width: 140, alignment: .leading)
                     }
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("系统 · 动态文本").font(.system(size: 10)).foregroundStyle(.secondary)
+                        Text("系统时间").font(.system(size: 11)).foregroundStyle(.secondary)
                         CalibratedClockText(projection: systemProjection)
-                            .font(.system(size: 23, weight: .medium, design: .rounded)).monospacedDigit()
+                            .font(.system(size: 26, weight: .medium, design: .rounded)).monospacedDigit()
                             .frame(width: 140, alignment: .leading)
                     }
                 }
-                Text("抓取时真值 " + (sample.hourFormat ?? .twentyFour).string(from: Date(timeIntervalSince1970: utc)))
-                    .font(.system(size: 10)).monospacedDigit().foregroundStyle(.secondary)
-                Text(String(format: "系统快 %+.1f 秒 · 样本 #%d", -correction, sample.generation)).font(.system(size: 10))
-                Text(sample.status + " · 这是验证组件").font(.system(size: 9)).foregroundStyle(.secondary)
+                HStack {
+                    Text("系统" + ClockPresentation.systemDifference(correction: sample.correction))
+                    Spacer()
+                    Text(ClockPresentation.status(sample.status)).foregroundStyle(.secondary)
+                }.font(.system(size: 10))
+                Text("最近校时 " + ClockPresentation.lastSync(sample, hourFormat: sample.hourFormat ?? .twentyFour))
+                    .font(.system(size: 9)).monospacedDigit().foregroundStyle(.secondary)
             } else {
                 Text(entry.problem ?? "尚未校准").font(.callout)
-                Text("不会用系统时间冒充真实时间").font(.caption).foregroundStyle(.secondary)
+                Text("联网并打开 App 后自动校时").font(.caption).foregroundStyle(.secondary)
             }
         }.containerBackground(.background, for: .widget)
     }
@@ -110,8 +113,8 @@ struct CalibratedClockText: View {
     let kind = "TrueWorldTimeProbeWidget"
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ProbeProvider()) { entry in ProbeWidgetView(entry: entry) }
-            .configurationDisplayName("真世界时验证")
-            .description("验证独立校时与系统时间变化，不是正式产品。")
+            .configurationDisplayName("真世界时")
+            .description("独立网络校时，随时分清真实时间与系统时间。")
             .supportedFamilies([.systemMedium])
     }
 }
