@@ -176,10 +176,11 @@ struct ProbeSettingsView: View {
     var body: some View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    Text("真世界时").font(.title2.weight(.semibold))
+                    Text("我的时区").font(.title2.weight(.semibold))
                     Spacer()
                     Text("版本 \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")").font(.caption).foregroundStyle(.secondary)
                 }
+                Text("每个人都有自己的时区。").font(.caption).foregroundStyle(.secondary)
                 HStack(spacing: 30) {
                     clock("真实时间", model.snapshot.trueUTC)
                     clock("系统时间", model.snapshot.systemUTC)
@@ -230,9 +231,9 @@ struct ProbeSettingsView: View {
                 HStack {
                     Button("收起到后台", action: hideWindow)
                     Spacer()
-                    Button("退出真世界时") { NSApplication.shared.terminate(nil) }
+                    Button("退出我的时区") { NSApplication.shared.terminate(nil) }
                 }
-                Text("在桌面或通知中心添加「真世界时」，随时查看真实时间。").font(.caption).foregroundStyle(.secondary)
+                Text("在桌面或通知中心添加「我的时区」，随时查看真实时间。").font(.caption).foregroundStyle(.secondary)
             }.padding(26).frame(width: 720)
                 .onAppear { login.refresh() }
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in login.refresh() }
@@ -254,12 +255,12 @@ struct ProbeSettingsView: View {
     func applicationDidFinishLaunching(_ notification: Notification) {
         let menu = NSMenu()
         let applicationItem = NSMenuItem()
-        let applicationMenu = NSMenu(title: "真世界时")
+        let applicationMenu = NSMenu(title: "我的时区")
         let settings = NSMenuItem(title: "打开设置…", action: #selector(showSettings(_:)), keyEquivalent: ",")
         settings.target = self
         applicationMenu.addItem(settings)
         applicationMenu.addItem(.separator())
-        applicationMenu.addItem(NSMenuItem(title: "退出真世界时", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        applicationMenu.addItem(NSMenuItem(title: "退出我的时区", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         applicationItem.submenu = applicationMenu
         menu.addItem(applicationItem)
         NSApplication.shared.mainMenu = menu
@@ -275,7 +276,7 @@ struct ProbeSettingsView: View {
         if settingsWindow == nil {
             let content = ProbeSettingsView(model: model) { [weak self] in self?.hideSettings() }
             let window = NSWindow(contentViewController: NSHostingController(rootView: content))
-            window.title = "真世界时 · 设置"
+            window.title = "我的时区 · 设置"
             window.styleMask = [.titled, .closable, .miniaturizable]
             window.isReleasedWhenClosed = false
             window.isRestorable = false

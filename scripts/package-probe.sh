@@ -14,6 +14,6 @@ else
 fi
 codesign --verify --deep --strict "$PROBE_APP"
 PROBE_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$PROBE_APP/Contents/Info.plist")"
-ditto -c -k --keepParent --norsrc "$PROBE_APP" "$PROBE_ROOT/dist/TrueWorldTime-$PROBE_VERSION.zip"
-printf '%s\n' "$PROBE_ROOT/dist/TrueWorldTime-$PROBE_VERSION.zip"
-bash "$PROBE_ROOT/scripts/make-dmg.sh" "$PROBE_APP" "$PROBE_ROOT/dist/TrueWorldTime-$PROBE_VERSION.dmg"
+ditto -c -k --keepParent --norsrc "$PROBE_APP" "$PROBE_ROOT/dist/MyTimeZone-$PROBE_VERSION.zip"
+printf '%s\n' "$PROBE_ROOT/dist/MyTimeZone-$PROBE_VERSION.zip"
+bash "$PROBE_ROOT/scripts/make-dmg.sh" "$PROBE_APP" "$PROBE_ROOT/dist/MyTimeZone-$PROBE_VERSION.dmg"

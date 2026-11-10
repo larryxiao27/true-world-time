@@ -30,9 +30,10 @@ widget_product = add("widget-product", "PBXFileReference", explicitFileType="wra
 products = add("products", "PBXGroup", children=[app_product, widget_product], name="Products", sourceTree="<group>")
 localized_files = [add("strings-" + language, "PBXFileReference", lastKnownFileType="text.plist.strings", name=language, path="Resources/" + language + ".lproj/InfoPlist.strings", sourceTree="<group>") for language in ["zh-Hans", "en"]]
 localized_group = add("localized-strings", "PBXVariantGroup", children=localized_files, name="InfoPlist.strings", sourceTree="<group>")
-main_group = add("main-group", "PBXGroup", children=list(file_ids.values()) + [localized_group, products], sourceTree="<group>")
+icon_file = add("app-icon-file", "PBXFileReference", lastKnownFileType="image.icns", path="Resources/AppIcon.icns", sourceTree="<group>")
+main_group = add("main-group", "PBXGroup", children=list(file_ids.values()) + [localized_group, icon_file, products], sourceTree="<group>")
 
-common = {"SDKROOT": "macosx", "MACOSX_DEPLOYMENT_TARGET": "15.0", "ARCHS": "arm64", "SWIFT_VERSION": "6.0", "CLANG_ENABLE_MODULES": "YES", "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "CODE_SIGN_INJECT_BASE_ENTITLEMENTS": "YES", "CURRENT_PROJECT_VERSION": "100", "MARKETING_VERSION": version, "SUPPORTED_PLATFORMS": "macosx", "GENERATE_INFOPLIST_FILE": "NO"}
+common = {"SDKROOT": "macosx", "MACOSX_DEPLOYMENT_TARGET": "15.0", "ARCHS": "arm64", "SWIFT_VERSION": "6.0", "CLANG_ENABLE_MODULES": "YES", "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "CODE_SIGN_INJECT_BASE_ENTITLEMENTS": "YES", "CURRENT_PROJECT_VERSION": "110", "MARKETING_VERSION": version, "SUPPORTED_PLATFORMS": "macosx", "GENERATE_INFOPLIST_FILE": "NO"}
 def configs(name, settings):
     ids = []
     for configuration in ["Debug", "Release"]:
@@ -42,15 +43,16 @@ def configs(name, settings):
 
 widget_sources = add("widget-sources", "PBXSourcesBuildPhase", buildActionMask=2147483647, files=[add("widget-" + p, "PBXBuildFile", fileRef=file_ids[p]) for p in [sources[0], sources[2]]], runOnlyForDeploymentPostprocessing=0)
 widget_frameworks = add("widget-frameworks", "PBXFrameworksBuildPhase", buildActionMask=2147483647, files=[], runOnlyForDeploymentPostprocessing=0)
+widget_resources = add("widget-resources", "PBXResourcesBuildPhase", buildActionMask=2147483647, files=[add("widget-icon-build", "PBXBuildFile", fileRef=icon_file)], runOnlyForDeploymentPostprocessing=0)
 widget_settings = dict(common, PRODUCT_NAME="TrueWorldTimeWidget", PRODUCT_BUNDLE_IDENTIFIER="io.xiaonan.TrueWorldTimeProbe.Widget", INFOPLIST_FILE="Config/Widget-Info.plist", CODE_SIGN_ENTITLEMENTS="Config/Widget.entitlements", ENABLE_APP_SANDBOX="YES", APPLICATION_EXTENSION_API_ONLY="YES", SKIP_INSTALL="YES", LD_RUNPATH_SEARCH_PATHS=["$(inherited)", "@executable_path/../Frameworks", "@executable_path/../../../../Frameworks"])
-widget_target = add("widget-target", "PBXNativeTarget", name="TrueWorldTimeWidget", buildConfigurationList=configs("widget", widget_settings), buildPhases=[widget_sources, widget_frameworks], buildRules=[], dependencies=[], productName="TrueWorldTimeWidget", productReference=widget_product, productType="com.apple.product-type.app-extension")
+widget_target = add("widget-target", "PBXNativeTarget", name="TrueWorldTimeWidget", buildConfigurationList=configs("widget", widget_settings), buildPhases=[widget_sources, widget_frameworks, widget_resources], buildRules=[], dependencies=[], productName="TrueWorldTimeWidget", productReference=widget_product, productType="com.apple.product-type.app-extension")
 proxy = add("widget-proxy", "PBXContainerItemProxy", containerPortal=oid("project"), proxyType=1, remoteGlobalIDString=widget_target, remoteInfo="TrueWorldTimeWidget")
 dependency = add("widget-dependency", "PBXTargetDependency", target=widget_target, targetProxy=proxy)
 embedded = add("widget-copy", "PBXBuildFile", fileRef=widget_product, settings={"ATTRIBUTES": ["RemoveHeadersOnCopy"]})
 embed_phase = add("embed-widgets", "PBXCopyFilesBuildPhase", buildActionMask=2147483647, dstPath="", dstSubfolderSpec=13, files=[embedded], name="Embed App Extensions", runOnlyForDeploymentPostprocessing=0)
 app_sources = add("app-sources", "PBXSourcesBuildPhase", buildActionMask=2147483647, files=[add("app-" + p, "PBXBuildFile", fileRef=file_ids[p]) for p in [sources[0], sources[1]] + sources[3:]], runOnlyForDeploymentPostprocessing=0)
 app_frameworks = add("app-frameworks", "PBXFrameworksBuildPhase", buildActionMask=2147483647, files=[], runOnlyForDeploymentPostprocessing=0)
-app_resources = add("app-resources", "PBXResourcesBuildPhase", buildActionMask=2147483647, files=[add("strings-build", "PBXBuildFile", fileRef=localized_group)], runOnlyForDeploymentPostprocessing=0)
+app_resources = add("app-resources", "PBXResourcesBuildPhase", buildActionMask=2147483647, files=[add("strings-build", "PBXBuildFile", fileRef=localized_group), add("app-icon-build", "PBXBuildFile", fileRef=icon_file)], runOnlyForDeploymentPostprocessing=0)
 app_settings = dict(common, PRODUCT_NAME="TrueWorldTimeProbe", EXECUTABLE_NAME="TrueWorldTime", PRODUCT_MODULE_NAME="TrueWorldTime", PRODUCT_BUNDLE_IDENTIFIER="io.xiaonan.TrueWorldTimeProbe", INFOPLIST_FILE="Config/App-Info.plist", ENABLE_APP_SANDBOX="NO", LD_RUNPATH_SEARCH_PATHS=["$(inherited)", "@executable_path/../Frameworks"], COMBINE_HIDPI_IMAGES="YES")
 app_target = add("app-target", "PBXNativeTarget", name="TrueWorldTimeProbe", buildConfigurationList=configs("app", app_settings), buildPhases=[app_sources, app_frameworks, app_resources, embed_phase], buildRules=[], dependencies=[dependency], productName="TrueWorldTimeProbe", productReference=app_product, productType="com.apple.product-type.application")
 project = add("project", "PBXProject", attributes={"LastUpgradeCheck": "2620", "BuildIndependentTargetsInParallel": "YES"}, buildConfigurationList=configs("project", common), compatibilityVersion="Xcode 14.0", developmentRegion="zh-Hans", hasScannedForEncodings=0, knownRegions=["zh-Hans", "en", "Base"], mainGroup=main_group, productRefGroup=products, projectDirPath="", projectRoot="", targets=[app_target, widget_target])
@@ -68,9 +70,9 @@ reference = f'<BuildableReference BuildableIdentifier="primary" BlueprintIdentif
 <AnalyzeAction buildConfiguration="Debug"/><ArchiveAction buildConfiguration="Release" revealArchiveInOrganizer="YES"/>
 </Scheme>
 ''')
-info = {"CFBundleDevelopmentRegion": "zh-Hans", "CFBundleLocalizations": ["zh-Hans", "en"], "CFBundleExecutable": "$(EXECUTABLE_NAME)", "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)", "CFBundleInfoDictionaryVersion": "6.0", "CFBundleName": "$(PRODUCT_NAME)", "CFBundleShortVersionString": "$(MARKETING_VERSION)", "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)", "LSMinimumSystemVersion": "$(MACOSX_DEPLOYMENT_TARGET)"}
+info = {"CFBundleDevelopmentRegion": "zh-Hans", "CFBundleLocalizations": ["zh-Hans", "en"], "CFBundleExecutable": "$(EXECUTABLE_NAME)", "CFBundleIdentifier": "$(PRODUCT_BUNDLE_IDENTIFIER)", "CFBundleInfoDictionaryVersion": "6.0", "CFBundleName": "$(PRODUCT_NAME)", "CFBundleShortVersionString": "$(MARKETING_VERSION)", "CFBundleVersion": "$(CURRENT_PROJECT_VERSION)", "CFBundleIconFile": "AppIcon", "LSMinimumSystemVersion": "$(MACOSX_DEPLOYMENT_TARGET)"}
 app_info = dict(info, CFBundleDisplayName="TrueWorldTimeProbe", CFBundlePackageType="APPL", NSPrincipalClass="NSApplication", LSUIElement=True)
-widget_info = dict(info, CFBundleDisplayName="真世界时", CFBundlePackageType="XPC!", NSExtension={"NSExtensionPointIdentifier": "com.apple.widgetkit-extension"}, NSAppTransportSecurity={"NSAllowsLocalNetworking": True})
+widget_info = dict(info, CFBundleDisplayName="我的时区", CFBundlePackageType="XPC!", NSExtension={"NSExtensionPointIdentifier": "com.apple.widgetkit-extension"}, NSAppTransportSecurity={"NSAllowsLocalNetworking": True})
 for name, value in [("App-Info.plist", app_info), ("Widget-Info.plist", widget_info)]:
     (root / "Config" / name).write_bytes(plistlib.dumps(value))
 print(bundle)

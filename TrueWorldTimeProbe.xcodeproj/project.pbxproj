@@ -73,9 +73,15 @@
 			"name" = "InfoPlist.strings";
 			"sourceTree" = "<group>";
 		};
+		"C076D0F19BF37A97E5DBDB7A" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "image.icns";
+			"path" = "Resources/AppIcon.icns";
+			"sourceTree" = "<group>";
+		};
 		"870B3294C0CBD48AF6BBCC1B" = {
 			"isa" = "PBXGroup";
-			"children" = ("0FDCEB91280DE73A856C8661", "C8588E5695656CF61992E12B", "747D7DC474D65A975BFFA728", "D52EBA7221FFF5AC3B0B153E", "31420F6A96E39F4A25064A87", "470072D834FACC92F98F569D", "FBDC4F23F93125BBEEAE800C");
+			"children" = ("0FDCEB91280DE73A856C8661", "C8588E5695656CF61992E12B", "747D7DC474D65A975BFFA728", "D52EBA7221FFF5AC3B0B153E", "31420F6A96E39F4A25064A87", "470072D834FACC92F98F569D", "C076D0F19BF37A97E5DBDB7A", "FBDC4F23F93125BBEEAE800C");
 			"sourceTree" = "<group>";
 		};
 		"024B61C612AF874264C3C746" = {
@@ -98,6 +104,16 @@
 			"files" = ();
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
+		"F46C0EAA33717CD11F1DE33C" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C076D0F19BF37A97E5DBDB7A";
+		};
+		"2093904A82FF706A79646301" = {
+			"isa" = "PBXResourcesBuildPhase";
+			"buildActionMask" = "2147483647";
+			"files" = ("F46C0EAA33717CD11F1DE33C");
+			"runOnlyForDeploymentPostprocessing" = "0";
+		};
 		"8EEBAB68363C2B0DAE00DB30" = {
 			"isa" = "XCBuildConfiguration";
 			"name" = "Debug";
@@ -110,8 +126,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "100";
-				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "110";
+				"MARKETING_VERSION" = "1.1.0";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeWidget";
@@ -137,8 +153,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "100";
-				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "110";
+				"MARKETING_VERSION" = "1.1.0";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeWidget";
@@ -162,7 +178,7 @@
 			"isa" = "PBXNativeTarget";
 			"name" = "TrueWorldTimeWidget";
 			"buildConfigurationList" = "7475E6A6368E532E2681E781";
-			"buildPhases" = ("82CE34952E166218838BE670", "112482586DC9325ECD958FF1");
+			"buildPhases" = ("82CE34952E166218838BE670", "112482586DC9325ECD958FF1", "2093904A82FF706A79646301");
 			"buildRules" = ();
 			"dependencies" = ();
 			"productName" = "TrueWorldTimeWidget";
@@ -229,10 +245,14 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "470072D834FACC92F98F569D";
 		};
+		"5D393A4EEAFAAE7A7027F57C" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "C076D0F19BF37A97E5DBDB7A";
+		};
 		"8ECC8B5D05B79F879ACDF1A2" = {
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
-			"files" = ("3D63C6937ED43ADE4AE6DEDA");
+			"files" = ("3D63C6937ED43ADE4AE6DEDA", "5D393A4EEAFAAE7A7027F57C");
 			"runOnlyForDeploymentPostprocessing" = "0";
 		};
 		"E9B2E96ABC5F6856F2BE79CF" = {
@@ -247,8 +267,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "100";
-				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "110";
+				"MARKETING_VERSION" = "1.1.0";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeProbe";
@@ -274,8 +294,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "100";
-				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "110";
+				"MARKETING_VERSION" = "1.1.0";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"PRODUCT_NAME" = "TrueWorldTimeProbe";
@@ -318,8 +338,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "100";
-				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "110";
+				"MARKETING_VERSION" = "1.1.0";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-Onone";
@@ -337,8 +357,8 @@
 				"CODE_SIGN_STYLE" = "Manual";
 				"CODE_SIGN_IDENTITY" = "-";
 				"CODE_SIGN_INJECT_BASE_ENTITLEMENTS" = "YES";
-				"CURRENT_PROJECT_VERSION" = "100";
-				"MARKETING_VERSION" = "1.0.0";
+				"CURRENT_PROJECT_VERSION" = "110";
+				"MARKETING_VERSION" = "1.1.0";
 				"SUPPORTED_PLATFORMS" = "macosx";
 				"GENERATE_INFOPLIST_FILE" = "NO";
 				"SWIFT_OPTIMIZATION_LEVEL" = "-O";

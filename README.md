@@ -1,8 +1,14 @@
-# 真世界时 · True World Time
+# 我的时区 · My Time Zone
 
-macOS 独立网络时钟。系统时间被调快或调回时，依然可以查看真实时间，并看清两者的差异。
+![我的时区图标](Assets/my-time-zone-256.png)
 
-当前版本：**1.0.0**。支持 Apple Silicon，要求 macOS 15 或以上。
+**每个人都有自己的时区。**
+
+迷茫的时候，看一眼时间，也提醒自己回到自己的节奏。
+
+这是一款 macOS 独立网络时钟：系统时间被调快或调回时，依然可以查看真实时间，并看清两者的差异。
+
+当前版本：**1.1.0**。支持 Apple Silicon，要求 macOS 15 或以上。
 
 ## 功能
 
@@ -15,15 +21,15 @@ macOS 独立网络时钟。系统时间被调快或调回时，依然可以查�
 
 ## 安装与升级
 
-从本仓库的 [Releases](https://github.com/larryxiao27/true-world-time/releases) 下载 `TrueWorldTime-1.0.0.dmg`。
+从本仓库的 [Releases](https://github.com/larryxiao27/true-world-time/releases) 下载 `MyTimeZone-1.1.0.dmg`。
 
-1. 如旧版仍在运行，打开它的设置并选择「退出真世界时」。
-2. 打开磁盘镜像，将「真世界时」拖入「应用程序」并替换旧版。
+1. 如旧版仍在运行，打开它的设置并选择「退出我的时区」。
+2. 打开磁盘镜像，将「我的时区」拖入「应用程序」并替换旧版。
 3. 启动后会静默校时；再次打开 App 可进入设置。
-4. 首次使用时，在桌面或通知中心的「编辑小组件」中添加「真世界时」。已有组件继续沿用。
+4. 首次使用时，在桌面或通知中心的「编辑小组件」中添加「我的时区」。已有组件继续沿用。
 5. 如需登录启动，在设置中打开相应开关；若系统要求批准，按页面提示完成。
 
-应用使用本地化显示名「真世界时」。为兼容既有组件、偏好设置和登录项，内部安装目录、Bundle Identifier 与 Widget kind 沿用原标识；命令行或显示全部扩展名时可能仍见 `TrueWorldTimeProbe.app`。
+应用使用本地化显示名「我的时区」。为兼容既有组件、偏好设置和登录项，内部安装目录、Bundle Identifier 与 Widget kind 沿用原标识；命令行或显示全部扩展名时可能仍见 `TrueWorldTimeProbe.app`。
 
 ## 使用要求
 
@@ -67,7 +73,8 @@ Widget/               原生双时钟组件
 Sources/ClockCore/    独立校时、连续计时和显示锚点
 Sources/ClockProbeCLI/ 命令行工具
 Tests/                自动化检查
-Resources/            应用显示名称本地化
+Resources/            应用图标与显示名称本地化
+Assets/               图标预览与大尺寸导出
 scripts/              构建、打包和检查工具
 docs/                 架构、性能与发布说明
 ```

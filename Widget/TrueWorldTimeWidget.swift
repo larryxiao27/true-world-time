@@ -13,7 +13,7 @@ struct ProbeEntry: TimelineEntry {
 struct ProbeProvider: TimelineProvider {
     func placeholder(in context: Context) -> ProbeEntry { ProbeEntry(date: .now, problem: "尚未校准") }
     func getSnapshot(in context: Context, completion: @escaping (ProbeEntry) -> Void) {
-        completion(ProbeEntry(date: .now, problem: "打开真世界时以完成校时"))
+        completion(ProbeEntry(date: .now, problem: "打开我的时区以完成校时"))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<ProbeEntry>) -> Void) {
         // Detached from the app: only the system's actual widget renderer can validate this path.
@@ -49,7 +49,7 @@ struct ProbeProvider: TimelineProvider {
                     if entries.isEmpty { entries = [ProbeEntry(date: now, problem: "暂时无法显示时间，请重新校时")] }
                 } else { entries = [ProbeEntry(date: now, problem: "等待网络校时")] }
             } catch {
-                entries = [ProbeEntry(date: .now, problem: "打开真世界时以更新时间")]
+                entries = [ProbeEntry(date: .now, problem: "打开我的时区以更新时间")]
             }
             box.complete(Timeline(entries: entries, policy: .after(Date().addingTimeInterval(900))))
         }
@@ -67,7 +67,7 @@ struct ProbeWidgetView: View {
     let entry: ProbeEntry
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text("真世界时").font(.caption.weight(.semibold))
+            Text("我的时区").font(.caption.weight(.semibold))
             if let sample = entry.snapshot, let projection = entry.projection, let systemProjection = entry.systemProjection {
                 HStack(alignment: .top, spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
@@ -113,7 +113,7 @@ struct CalibratedClockText: View {
     let kind = "TrueWorldTimeProbeWidget"
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ProbeProvider()) { entry in ProbeWidgetView(entry: entry) }
-            .configurationDisplayName("真世界时")
+            .configurationDisplayName("我的时区")
             .description("独立网络校时，随时分清真实时间与系统时间。")
             .supportedFamilies([.systemMedium])
     }
